@@ -1,0 +1,4 @@
+ofxCrypto
+ofxLibwebsockets
+ofxNetwork
+ofxTurboJpeg
