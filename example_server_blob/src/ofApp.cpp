@@ -107,9 +107,13 @@ void ofApp::update(){
     cosValue++;
 
     if (mode == 0 || mode == 2) {
-        cosValue%=24;
-    } else if (mode == 3 || mode == 4) {
+        cosValue%=12;
+    } else if (mode == 4) {
         cosValue%=72;
+    } else if (mode == 3) {
+        if (cosValue >= 72) {
+            cosValue = 60;
+        }
     }
 
     ofSleepMillis(200);
