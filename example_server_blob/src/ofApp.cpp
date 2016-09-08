@@ -30,7 +30,7 @@ int mode = 4;
 int pixelCraweler = 0;
 
 void ofApp::setup(){
-    ofSetFrameRate(60);
+    ofSetFrameRate(120);
     ofxLibwebsockets::ServerOptions options = ofxLibwebsockets::defaultServerOptions();
     options.port = 9093;
     
@@ -53,42 +53,36 @@ void ofApp::setup(){
     udpConnectionBroadcast.SetEnableBroadcast(true);
     std::string messageSent = "**";
     udpConnectionBroadcast.Send(messageSent.c_str(), messageSent.size());
-
+    
     // WAIT
     ofSleepMillis(100);
-    
     char udpMessage[1000];
     auto ret = udpConnectionBroadcast.Receive(udpMessage, 1000);
-    
     while (udpMessage[0] != '\0') {
-        
+        cout << ((int)udpMessage[0]) - 101 << endl;
         ofxUDPManager udpConnectionRx;
-        moduleConnections[((int)udpMessage[0]) - 100] = udpConnectionRx;
-        moduleConnections[((int)udpMessage[0]) - 100].Create();
-        moduleConnections[((int)udpMessage[0]) - 100].SetNonBlocking(true);
-        moduleConnections[((int)udpMessage[0]) - 100].Bind(6000);
+        moduleConnections[((int)udpMessage[0]) - 101] = udpConnectionRx;
+        moduleConnections[((int)udpMessage[0]) - 101].Create();
+        moduleConnections[((int)udpMessage[0]) - 101].SetNonBlocking(true);
+        moduleConnections[((int)udpMessage[0]) - 101].Bind(6000);
         string ip = "192.168.2." + ofToString((int)udpMessage[0]);
         cout << ip << endl;
-        moduleConnections[((int)udpMessage[0]) - 100].Connect(ip.c_str(), 8888);
-        moduleConnections[((int)udpMessage[0]) - 100].SetEnableBroadcast(false);
+        moduleConnections[((int)udpMessage[0]) - 101].Connect(ip.c_str(), 8888);
+        moduleConnections[((int)udpMessage[0]) - 101].SetEnableBroadcast(false);
         std::fill_n(udpMessage, 1000, 0);
         auto ret = udpConnectionBroadcast.Receive(udpMessage, 1000);
-        
     }
-    
     ofSleepMillis(1000);
     testImage.load("rainbow_texture2.jpg");
     ofPixels pix;
     pix.allocate(72, 24, 3);
     text.allocate(pix);
-
-
-    myPlayer.loadMovie("movie.mp4");
+    myPlayer.loadMovie("KanyeMode.mp4");
     myPlayer.play();
-
 }
 
 void ofApp::update(){
+    
     myPlayer.update(); // get all the new frames
     
     if ( needToLoad ){
@@ -107,7 +101,7 @@ void ofApp::update(){
     cosValue++;
 
     if (mode == 0 || mode == 2) {
-        cosValue%=12;
+        cosValue%=24;
     } else if (mode == 4) {
         cosValue%=72;
     } else if (mode == 3) {
@@ -116,13 +110,13 @@ void ofApp::update(){
         }
     }
 
-    ofSleepMillis(200);
+   //ofSleepMillis(10);
 }
 
 void ofApp::draw() {
     ofSetBackgroundColor(0.0);
     
-  // SIN WAVE
+  // SIN WAVE2
     ofPixels pix;
 
     if (mode == 0) {
@@ -150,6 +144,10 @@ void ofApp::draw() {
         }
         text.loadScreenData(0, 0, 72, 24);
         text.readToPixels(pix);
+    } else if (mode == 5) {
+        if ( testImage.isAllocated() ) {
+            testImage.draw(0, 0);
+        }
     }
 
     ofPixels pixels;
@@ -175,9 +173,13 @@ void ofApp::draw() {
             pixels[3*(cosValue + j*72)+1] = 255;
             pixels[3*(cosValue + j*72)+2] = 255;
         }
+    } else if (mode == 5) {
+        if ( testImage.isAllocated() ) {
+            pixels = testImage.getPixels();
+        }
     }
 
-    if (myPlayer.isFrameNew() || mode != 1) {
+    if (myPlayer.isFrameNew() || mode != 1 || mode != 5) {
         for (int i = 0; i < 288; i++) {
             pixelsToSend[0][3*i] = pixels[panel1[i]+0];
             pixelsToSend[0][3*i+1] = pixels[panel1[i]+1];
@@ -207,6 +209,49 @@ void ofApp::draw() {
             pixelsToSend[4][3*i+1] = pixels[panel5[i]+1];
             pixelsToSend[4][3*i+2] = pixels[panel5[i]+2];
 
+        }
+        for (int i = 0; i < 288; i++) {
+            pixelsToSend[5][3*i] = pixels[panel6[i]+0];
+            pixelsToSend[5][3*i+1] = pixels[panel6[i]+1];
+            pixelsToSend[5][3*i+2] = pixels[panel6[i]+2];
+        }
+        for (int panel = 0; panel < 6; panel++) {
+            moduleConnections[panel].Send(pixelsToSend[panel], 864);
+            ofSleepMillis(1);
+        }
+        for (int panel = 0; panel < 6; panel++) {
+            moduleConnections[panel].Send("*", 1);
+        }
+    } else if (mode == 5 && testImage.isAllocated() ) {
+        for (int i = 0; i < 288; i++) {
+            pixelsToSend[0][3*i] = pixels[panel1[i]+0];
+            pixelsToSend[0][3*i+1] = pixels[panel1[i]+1];
+            pixelsToSend[0][3*i+2] = pixels[panel1[i]+2];
+        }
+        for (int i = 0; i < 288; i++) {
+            pixelsToSend[1][3*i] = pixels[panel2[i]+0];
+            pixelsToSend[1][3*i+1] = pixels[panel2[i]+1];
+            pixelsToSend[1][3*i+2] = pixels[panel2[i]+2];
+            
+        }
+        for (int i = 0; i < 288; i++) {
+            pixelsToSend[2][3*i] = pixels[panel3[i]+0];
+            pixelsToSend[2][3*i+1] = pixels[panel3[i]+1];
+            pixelsToSend[2][3*i+2] = pixels[panel3[i]+2];
+            
+        }
+        for (int i = 0; i < 288; i++) {
+            pixelsToSend[3][3*i] = pixels[panel4[i]+0];
+            pixelsToSend[3][3*i+1] = pixels[panel4[i]+1];
+            pixelsToSend[3][3*i+2] = pixels[panel4[i]+2];
+            
+        }
+        for (int i = 0; i < 288; i++) {
+            
+            pixelsToSend[4][3*i] = pixels[panel5[i]+0];
+            pixelsToSend[4][3*i+1] = pixels[panel5[i]+1];
+            pixelsToSend[4][3*i+2] = pixels[panel5[i]+2];
+            
         }
         for (int i = 0; i < 288; i++) {
             pixelsToSend[5][3*i] = pixels[panel6[i]+0];
@@ -271,6 +316,8 @@ void ofApp::keyPressed(int key) {
         mode = 3;
     } else if (key == 52) {
         mode = 4;
+    } else if (key == 53) {
+        mode = 5;
     }
 }
 void ofApp::keyReleased(int key){}
